@@ -5,13 +5,13 @@ const LEVELS = [
 ];
 const DAILY_GOAL = 60;
 const BOXES = [1,3,7,15]; // dias até a próxima revisão
-const XP = {card:5, right:10, review:15};
+const XP = {card:5, read:3, right:10, review:15};
 
 /* ---------- Estado salvo no aparelho ---------- */
 const KEY = "role-estudos-v1";
 const today = () => new Date().toLocaleDateString("sv-SE");
 const dayDiff = (a,b) => Math.round((new Date(b) - new Date(a)) / 86400000);
-function fresh(){ return {updatedAt:0, xp:0, streak:0, lastDay:null, todayDate:today(), todayXp:0, subjects:Object.keys(SUBJ), seen:{}, stats:{}, review:{}, sessions:0}; }
+function fresh(){ return {updatedAt:0, lessons:{}, trackSubj:"hist", xp:0, streak:0, lastDay:null, todayDate:today(), todayXp:0, subjects:Object.keys(SUBJ), seen:{}, stats:{}, review:{}, sessions:0}; }
 let st = fresh();
 try { const raw = localStorage.getItem(KEY); if(raw) st = Object.assign(fresh(), JSON.parse(raw)); } catch(e){}
 function save(){
@@ -25,6 +25,7 @@ function merge(local, remote){
   const other = base === remote ? local : remote;
   const out = Object.assign(fresh(), base);
   out.review = Object.assign({}, other.review || {}, base.review || {});
+  out.lessons = Object.assign({}, other.lessons || {}, base.lessons || {});
   out.stats = Object.assign({}, base.stats || {});
   for(const [k,v] of Object.entries(other.stats || {})){
     const b = out.stats[k] || {right:0, wrong:0};
@@ -37,6 +38,7 @@ function rollDay(){
   if(st.todayDate !== today()){ st.todayDate = today(); st.todayXp = 0; }
   if(st.lastDay && dayDiff(st.lastDay, today()) > 1) st.streak = 0;
 }
+st.subjects = st.subjects.filter(k => SUBJ[k]);
 rollDay();
 
 function levelOf(xp){
@@ -81,6 +83,7 @@ function render(){
   setTabs();
   if(sess) return renderSession();
   if(tab==="home") renderHome();
+  else if(tab==="tracks") renderTracks();
   else if(tab==="review") renderReview();
   else renderProgress();
   window.scrollTo(0,0);
@@ -103,8 +106,9 @@ function renderHome(){
     <div class="goal"><div class="goal-row"><span>Meta do dia</span><b>${Math.min(st.todayXp,DAILY_GOAL)} / ${DAILY_GOAL} XP</b></div>
       <div class="bar gold"><i style="width:${goalPct*100}%"></i></div></div>
   </section>
+  ${trackCta()}
   <section class="stack">
-    <h2>O que vai rolar hoje?</h2>
+    <h2>Sessão rápida</h2>
     <p class="muted">Toque para ligar ou desligar matérias.</p>
     <div class="chips" id="chips">${Object.entries(SUBJ).map(([k,v]) =>
       `<button class="chip" data-s="${k}" aria-pressed="${st.subjects.includes(k)}" ${cvar(k)}><span class="dot"></span>${v.name}</button>`).join("")}</div>
@@ -122,6 +126,7 @@ function renderHome(){
     save(); renderHome();
   };
   document.getElementById("go").onclick = startSession;
+  const tc = document.getElementById("tc"); if(tc) tc.onclick = () => startLesson(tc.dataset.id);
   const rv = document.getElementById("rv"); if(rv) rv.onclick = startReview;
 }
 
@@ -145,9 +150,15 @@ function startReview(){ const l = shuffle(dueList().map(id=>BY_ID[id])); if(!l.l
 function renderSession(){
   if(sess.i >= sess.list.length) return renderResult();
   const it = sess.list[sess.i], n = sess.list.length;
-  const kind = it.t==="card" ? "Card" : (sess.mode==="review" ? "Revisão" : "Questão");
+  const kind = it.t==="card" ? "Card" : it.t==="read" ? `Leitura ${it.idx}/${it.total}` : (sess.mode==="review" ? "Revisão" : "Questão");
   let inner;
-  if(it.t==="card"){
+  if(it.t==="read"){
+    inner = `<div class="label">${esc(it.lessonTitle)}</div>
+      <h2 class="card-title">${it.h}</h2>
+      <div class="card-body">${it.p.map(p=>`<p>${p}</p>`).join("")}</div>
+      <div class="spacer"></div>
+      <button class="btn" id="next">${it.idx === it.total ? "Ir para as questões" : "Continuar"}</button>`;
+  } else if(it.t==="card"){
     inner = `<h2 class="card-title">${it.title}</h2>
       <div class="card-body">${it.body.map(p=>`<p>${p}</p>`).join("")}</div>
       ${it.tip ? `<p class="tip">${it.tip}</p>` : ""}
@@ -167,7 +178,9 @@ function renderSession(){
       ${inner}
     </article>`;
   document.getElementById("quit").onclick = () => { sess = null; render(); };
-  if(it.t==="card"){
+  if(it.t==="read"){
+    document.getElementById("next").onclick = () => { addXp(XP.read); sess.xp += XP.read; sess.i++; render(); };
+  } else if(it.t==="card"){
     document.getElementById("next").onclick = () => {
       st.seen[it.id] = (st.seen[it.id]||0)+1; addXp(XP.card); sess.xp += XP.card; sess.i++; render();
     };
@@ -220,11 +233,19 @@ function answer(it, k){
 function addDays(n){ const d = new Date(); d.setDate(d.getDate()+n); return d.toLocaleDateString("sv-SE"); }
 
 function renderResult(){
-  if(!sess.done){ sess.done = true; st.sessions++; save(); }
+  if(!sess.done){
+    sess.done = true; st.sessions++;
+    if(sess.mode==="lesson"){
+      const prev = st.lessons[sess.lesson] || {best:0};
+      st.lessons[sess.lesson] = {done:true, best:Math.max(prev.best, sess.right), total:sess.right + sess.wrong};
+    }
+    save();
+  }
+  const nextL = sess.mode==="lesson" ? nextLesson(LESSON_BY_ID[sess.lesson].s) : null;
   const total = sess.right + sess.wrong;
   const lv = levelOf(st.xp);
   $app.innerHTML = `<article class="item result" style="--c:var(--accent)">
-      <div class="label">${sess.mode==="review" ? "Revisão concluída" : "Sessão concluída"}</div>
+      <div class="label">${sess.mode==="review" ? "Revisão concluída" : sess.mode==="lesson" ? "Lição concluída: " + esc(LESSON_BY_ID[sess.lesson].title) : "Sessão concluída"}</div>
       <div class="big">+${sess.xp} XP</div>
       <p class="muted">Nível ${lv.name}${lv.next ? ` · faltam ${lv.next.xp - st.xp} XP para ${lv.next.n}` : ""}</p>
       <div class="stats-grid">
@@ -234,12 +255,72 @@ function renderResult(){
       </div>
       ${sess.wrong ? `<p class="note">${sess.wrong} ${sess.wrong===1?"questão foi":"questões foram"} para a revisão de amanhã.</p>` : (total ? `<p class="note">Gabaritou. Nenhum erro para revisar.</p>` : "")}
       <div class="stack" style="width:100%">
-        <button class="btn" id="again">Mais uma sessão</button>
+        ${sess.mode==="lesson"
+          ? (nextL ? `<button class="btn" id="nextl">Próxima lição: ${esc(nextL.title)}</button>` : "") + `<button class="btn ghost" id="tracks">Voltar às trilhas</button>`
+          : `<button class="btn" id="again">Mais uma sessão</button>`}
         <button class="btn ghost" id="home">Voltar ao início</button>
       </div>
     </article>`;
-  document.getElementById("again").onclick = startSession;
+  const ag = document.getElementById("again"); if(ag) ag.onclick = startSession;
+  const nl = document.getElementById("nextl"); if(nl) nl.onclick = () => startLesson(nextL.id);
+  const tr = document.getElementById("tracks"); if(tr) tr.onclick = () => { sess = null; tab = "tracks"; render(); };
   document.getElementById("home").onclick = () => { sess = null; tab = "home"; render(); };
+}
+
+/* ---------- Trilhas ---------- */
+const LESSON_BY_ID = Object.fromEntries(LESSONS.map(l => [l.id, l]));
+const TRACK_SUBJ = [...new Set(LESSONS.map(l => l.s))];
+const lessonsOf = s => LESSONS.filter(l => l.s === s);
+const nextLesson = s => lessonsOf(s).find(l => !(st.lessons[l.id] && st.lessons[l.id].done)) || null;
+
+function startLesson(id){
+  const l = LESSON_BY_ID[id]; if(!l) return;
+  const reads = l.pages.map((pg, k) => ({t:"read", s:l.s, id:l.id + "-p" + (k+1), lessonTitle:l.title, h:pg.h, p:pg.p, idx:k+1, total:l.pages.length}));
+  sess = {mode:"lesson", lesson:id, list:[...reads, ...l.items], i:0, right:0, wrong:0, xp:0};
+  render();
+}
+
+function trackCta(){
+  const s = TRACK_SUBJ.includes(st.trackSubj) ? st.trackSubj : TRACK_SUBJ[0];
+  const l = nextLesson(s);
+  if(!l) return "";
+  const done = lessonsOf(s).length - lessonsOf(s).filter(x => !(st.lessons[x.id] && st.lessons[x.id].done)).length;
+  return `<section class="review-cta" ${cvar(s)}>
+    <div style="min-width:0"><div class="tag"><span class="dot"></span>Trilha de ${SUBJ[s].name} · ${done}/${lessonsOf(s).length}</div>
+    <b>${esc(l.title)}</b><div class="note">Texto curto e depois ${l.qs.length} questões</div></div>
+    <button class="btn small" id="tc" data-id="${l.id}">${done ? "Continuar" : "Começar"}</button></section>`;
+}
+
+function renderTracks(){
+  const s = TRACK_SUBJ.includes(st.trackSubj) ? st.trackSubj : TRACK_SUBJ[0];
+  const list = lessonsOf(s), nxt = nextLesson(s);
+  const done = list.filter(l => st.lessons[l.id] && st.lessons[l.id].done).length;
+  let lastArea = null;
+  const rows = list.map((l, k) => {
+    const r = st.lessons[l.id];
+    const head = l.area !== lastArea ? `<div class="label area">${esc(l.area)}</div>` : "";
+    lastArea = l.area;
+    const status = r && r.done ? `<span class="ls done">${r.best}/${l.qs.length}</span>` : (nxt && nxt.id === l.id ? `<span class="ls next">Próxima</span>` : `<span class="ls"></span>`);
+    return `${head}<button class="lesson ${nxt && nxt.id===l.id ? "is-next" : ""}" data-id="${l.id}" ${cvar(s)}>
+      <span class="ln">${k+1}</span><span class="lt"><b>${esc(l.title)}</b><span class="note">${l.pages.length} telas de leitura · ${l.qs.length} questões</span></span>${status}</button>`;
+  }).join("");
+  $app.innerHTML = `${header()}
+  <section class="stack"><h1>Trilhas</h1>
+    <p class="muted">Leia o texto da lição e depois responda às questões sobre o assunto. As que você errar vão para a revisão.</p>
+    <div class="chips" id="tchips">${TRACK_SUBJ.map(k => `<button class="chip" data-s="${k}" aria-pressed="${k===s}" ${cvar(k)}><span class="dot"></span>${SUBJ[k].name}</button>`).join("")}</div>
+  </section>
+  <section class="panel" ${cvar(s)}>
+    <div class="goal"><div class="goal-row"><span>${SUBJ[s].name}</span><b>${done} de ${list.length} lições</b></div>
+      <div class="bar"><i style="width:${done/list.length*100}%;background:var(--c)"></i></div></div>
+    <div class="lessons" id="lessons">${rows}</div>
+  </section>`;
+  document.getElementById("tchips").onclick = e => {
+    const c = e.target.closest(".chip"); if(!c) return;
+    st.trackSubj = c.dataset.s; save(); renderTracks();
+  };
+  document.getElementById("lessons").onclick = e => {
+    const b = e.target.closest(".lesson"); if(b) startLesson(b.dataset.id);
+  };
 }
 
 function renderReview(){

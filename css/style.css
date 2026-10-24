@@ -128,3 +128,16 @@ nav.tabs .in{display:flex;gap:6px;width:100%;max-width:560px}
 nav.tabs button{flex:1;border:0;background:none;border-radius:12px;padding:8px 4px;font-weight:700;font-size:.85rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+
+/* trilhas */
+.lessons{display:flex;flex-direction:column;gap:8px}
+.lessons .area{margin-top:8px}
+.lesson{display:flex;align-items:center;gap:12px;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 14px;width:100%}
+.lesson:hover{border-color:var(--c)}
+.lesson.is-next{border-color:var(--c);background:color-mix(in srgb,var(--c) 8%,var(--surface))}
+.lesson .ln{font-family:var(--display);font-weight:800;color:var(--c);min-width:1.6em;font-variant-numeric:tabular-nums}
+.lesson .lt{flex:1;min-width:0;display:flex;flex-direction:column}
+.ls{font-size:.8rem;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted)}
+.ls.done{color:var(--ok)}
+.ls.next{color:var(--c)}
+.review-cta .tag{margin-bottom:2px}

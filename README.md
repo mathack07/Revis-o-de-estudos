@@ -1,10 +1,11 @@
 # Rolê de Estudos
 
 App para estudar no lugar de ficar rolando reels: cards rápidos e questões de múltipla escolha de
-História, Direito, Conhecimentos bancários, Mercado financeiro, Português e Matemática financeira,
+História, Direito, Português, Conhecimentos bancários e Mercado financeiro,
 pensando no concurso do Banco do Brasil.
 
-- Sessões de 15 itens (cerca de 10 minutos), misturando cards e questões
+- Trilhas: lições em ordem com texto explicativo e depois questões (História, Português e Direito por área)
+- Sessões rápidas de 15 itens (cerca de 10 minutos), misturando cards e questões
 - Pontos (XP), meta do dia, dias seguidos e níveis
 - Revisão de erros: a questão errada volta em 1, 3, 7 e 15 dias
 - Login com Google (Firebase) para salvar o progresso entre celular e computador
@@ -18,7 +19,9 @@ O site é feito só com HTML, CSS e JavaScript, sem etapa de build.
 | --- | --- |
 | `index.html` | Página principal |
 | `css/style.css` | Visual |
-| `js/content.js` | Matérias, cards e questões. É aqui que se adiciona conteúdo |
+| `js/content.js` | Matérias, cards e questões avulsas das sessões rápidas |
+| `js/lessons-*.js` | Lições das trilhas (História, Português, Direito) |
+| `js/lessons-setup.js` | Liga as questões das lições às sessões e à revisão |
 | `js/app.js` | Telas, pontos, níveis e revisão |
 | `js/sync.js` | Login com Google e salvamento no Firestore |
 | `js/config.js` | Configuração do Firebase (preencher) |
@@ -65,3 +68,19 @@ Em `js/content.js`, copie um item e troque o `id` (precisa ser único):
 ```
 
 `a` é a posição da resposta certa, começando em 0. As alternativas são embaralhadas na tela.
+
+## Adicionar uma lição
+
+Em `js/lessons-historia.js` (ou português, direito), copie uma lição e troque o `id`:
+
+```js
+{id:"hl14", s:"hist", area:"História geral", title:"Título da lição",
+ pages:[
+  {h:"Título da tela", p:["Parágrafo 1", "Parágrafo 2"]}
+ ],
+ qs:[
+  ["Pergunta?", ["A","B","C","D","E"], 0, "Explicação da resposta"]
+ ]},
+```
+
+As lições aparecem na ordem do arquivo. `area` agrupa as lições na tela (em Direito: Constitucional, Administrativo etc.).

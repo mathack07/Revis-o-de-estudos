@@ -5,9 +5,9 @@ const SUBJ = {
   dir:{name:"Direito", c:"--c-dir"},
   banc:{name:"Conhecimentos bancários", c:"--c-banc"},
   atual:{name:"Mercado financeiro", c:"--c-atual"},
-  port:{name:"Português", c:"--c-port"},
-  mat:{name:"Matemática financeira", c:"--c-mat"}
+  port:{name:"Português", c:"--c-port"}
 };
+const LESSONS = []; // preenchido pelos arquivos lessons-*.js
 const EST = "Questão de treino no estilo Cesgranrio";
 
 /* ---------- Conteúdo de exemplo ---------- */
@@ -63,18 +63,7 @@ const ITEMS = [
 {id:"p5",s:"port",t:"quiz",q:"Assinale a frase em que a crase está correta:",o:["Começou à estudar cedo.","Fui à reunião do conselho.","Andou à cavalo pela fazenda.","Entregou o relatório à ele.","Ficou frente à frente com o gerente."],a:1,e:"'Ir a' + 'a reunião' = à reunião. Não há crase antes de verbo, de palavra masculina, de pronome pessoal nem em expressões com palavras repetidas."},
 {id:"p6",s:"port",t:"quiz",q:"Está correta, quanto à concordância, a frase:",o:["Houveram muitos problemas no sistema.","Fazem dois anos que estudo para o concurso.","Haviam poucos candidatos na sala.","Houve muitos problemas no sistema.","Devem haver soluções para isso."],a:3,e:"Haver (existir) e fazer (tempo) são impessoais e ficam no singular. Inclusive o auxiliar: 'deve haver'."},
 {id:"p7",s:"port",t:"quiz",q:"Assinale o uso correto:",o:["Não sei porque ele saiu.","Ele saiu por quê estava cansado.","Não sei por que ele saiu.","Por quê você saiu?","Explique o por quê da decisão."],a:2,e:"'Por que' separado e sem acento equivale a 'por qual motivo'. Funciona em perguntas diretas e indiretas."},
-{id:"p8",s:"port",t:"quiz",q:"Complete: O cliente foi ___ atendido por um funcionário de ___ humor.",o:["mal / mau","mau / mal","mal / mal","mau / mau","bem / mal"],a:0,e:"Mal atendido (oposto de bem). Mau humor (oposto de bom)."},
-
-/* Matemática financeira */
-{id:"m1",s:"mat",t:"card",title:"Juros simples",body:["<b>J = C · i · t</b>","Os juros incidem sempre sobre o capital inicial. Montante: M = C + J.","Ex.: R$ 1.000 a 2% ao mês por 3 meses → J = 1.000 × 0,02 × 3 = <b>R$ 60</b>."]},
-{id:"m2",s:"mat",t:"card",title:"Juros compostos",body:["<b>M = C · (1 + i)<sup>t</sup></b>","Juros sobre juros. Ex.: R$ 1.000 a 10% ao ano por 2 anos → 1.000 × 1,21 = <b>R$ 1.210</b>."],tip:"Taxa e tempo sempre na mesma unidade (mês com mês, ano com ano)."},
-{id:"m3",s:"mat",t:"card",title:"Taxa real (Fisher)",body:["<b>(1 + nominal) = (1 + real) · (1 + inflação)</b>","Rendeu 12% com inflação de 5%? Real = 1,12 ÷ 1,05 − 1 ≈ <b>6,67%</b>, e não 7%."]},
-{id:"m4",s:"mat",t:"card",title:"Aumento e desconto não se anulam",body:["Subir 20% e depois descer 20%: 1,20 × 0,80 = 0,96.","Resultado: <b>perda de 4%</b>. Multiplique os fatores, não some as porcentagens."]},
-{id:"m5",s:"mat",t:"quiz",q:"Um capital de R$ 1.000 aplicado a juros simples de 2% ao mês, por 5 meses, gera montante de:",o:["R$ 1.050","R$ 1.100","R$ 1.104,08","R$ 1.200","R$ 1.010"],a:1,e:"J = 1.000 × 0,02 × 5 = 100. M = 1.100. (1.104,08 seria o resultado com juros compostos.)"},
-{id:"m6",s:"mat",t:"quiz",q:"R$ 1.000 a juros compostos de 10% ao ano, por 2 anos, resultam em:",o:["R$ 1.200","R$ 1.210","R$ 1.100","R$ 1.221","R$ 1.020"],a:1,e:"M = 1.000 × 1,1² = 1.000 × 1,21 = 1.210."},
-{id:"m7",s:"mat",t:"quiz",q:"Um investimento rendeu 12% no ano, com inflação de 5%. A taxa real foi de aproximadamente:",o:["7,00%","6,67%","17,60%","5,00%","2,40%"],a:1,e:"1,12 ÷ 1,05 = 1,0667. Taxa real ≈ 6,67%."},
-{id:"m8",s:"mat",t:"quiz",q:"Um produto sobe 20% e, depois, tem desconto de 20%. Em relação ao preço original, ele:",o:["Ficou igual","Ficou 4% mais barato","Ficou 4% mais caro","Ficou 2% mais barato","Ficou 20% mais barato"],a:1,e:"1,20 × 0,80 = 0,96. O preço final é 96% do original: 4% mais barato."},
-{id:"m9",s:"mat",t:"quiz",q:"A taxa anual equivalente a 1% ao mês em juros compostos é de aproximadamente:",o:["12,00%","12,68%","11,36%","13,00%","10,00%"],a:1,e:"(1,01)¹² ≈ 1,1268, ou seja, cerca de 12,68% ao ano."}
+{id:"p8",s:"port",t:"quiz",q:"Complete: O cliente foi ___ atendido por um funcionário de ___ humor.",o:["mal / mau","mau / mal","mal / mal","mau / mau","bem / mal"],a:0,e:"Mal atendido (oposto de bem). Mau humor (oposto de bom)."}
 ];
 ITEMS.forEach(it=>{ if(it.t==="quiz") it.src = EST; });
 const BY_ID = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
